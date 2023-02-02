@@ -58,7 +58,6 @@ class ForceEmailVerifyListener implements CakeEventListener {
 
    $actorIdentifier = $controller->Session->read('Auth.User.username');
 
-
    // We should only fire if the actor is the CoPerson.
    $verify = false;
    foreach ($coPerson['CoOrgIdentityLink'] as $link) {
@@ -105,8 +104,8 @@ class ForceEmailVerifyListener implements CakeEventListener {
      return true;
    }
 
-   // We only intend to intercept the edit action.
-   if(!($controller->action === "edit")) {
+   // We only intend to intercept the edit or add actions.
+   if(!(($controller->action === "edit") || ($controller->action === "add"))) {
      return true;
    }
 
@@ -119,13 +118,6 @@ class ForceEmailVerifyListener implements CakeEventListener {
    // We do not intercept any REST calls.
    $restful = $controller->request->is('restful');
    if($restful) {
-     return true;
-   }
-
-   $emailAddress = $controller->data;
-
-   // We only intercept EmailAddresses attached to CoPerson records.
-   if(empty($emailAddress['EmailAddress']['co_person_id'])) {
      return true;
    }
 
@@ -147,8 +139,18 @@ class ForceEmailVerifyListener implements CakeEventListener {
      $url = array();
      $url['plugin'] = 'force_email_verify';
      $url['controller'] = 'force_email_addresses';
-     $url['action'] = 'edit';
-     $url[] = $emailAddress['EmailAddress']['id'];
+     $url['action'] = $controller->action;
+
+     if(!empty($controller->data) && ($controller->action === 'edit')) {
+       $emailAddress = $controller->data;
+       $url[] = $emailAddress['EmailAddress']['id'];
+     } elseif ($controller->action === 'add') {
+       if(!empty($controller->request->named['copersonid'])) {
+         $url['copersonid'] = $controller->request->named['copersonid'];
+       } elseif (!empty($controller->request->named['orgidentityid'])) {
+         $url['orgidentityid'] = $controller->request->named['orgidentityid'];
+       }
+     }
 
      // We need to set the response details here because we are going
      // to stop propagation of the CakeEvent.

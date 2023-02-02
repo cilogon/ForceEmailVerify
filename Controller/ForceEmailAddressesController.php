@@ -69,6 +69,7 @@ class ForceEmailAddressesController extends MVPAController {
 
     // Only platform or CO admins can use this plugin.
     $p['edit'] = ($roles['cmadmin'] || $roles['coadmin']);
+    $p['add'] = ($roles['cmadmin'] || $roles['coadmin']);
 
     $this->set('permissions', $p);
     return $p[$this->action];
